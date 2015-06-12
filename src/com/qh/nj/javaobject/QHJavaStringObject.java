@@ -1,4 +1,4 @@
-package com.qh.nj;
+package com.qh.nj.javaobject;
 
 import java.net.URI;
 
@@ -22,8 +22,7 @@ public class QHJavaStringObject extends SimpleJavaFileObject {
 	private QHJavaStringObject(String name, String code) {
 	   super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
 	                Kind.SOURCE);
-	  
-	   this.code = code;
+	  this.code = code;
 	}
 	
 	

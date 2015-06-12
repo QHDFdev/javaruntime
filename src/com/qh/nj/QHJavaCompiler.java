@@ -10,9 +10,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import com.qh.nj.dianost.NormalDianostCollector;
-import com.qh.nj.dianost.QHDianostCollector;
-
 
 //import net.openhft.compiler.CompilerUtils;
 import org.slf4j.Logger;
@@ -21,53 +18,55 @@ import org.slf4j.LoggerFactory;
 
 
 public class QHJavaCompiler {
-	
-	
-	// compiler info collector
-	QHDianostCollector infolistener = 	new NormalDianostCollector ();
-	
-	JavaByteCodeManager byteCodeManager;
-	
+		
 	private static final Logger logger = LoggerFactory.getLogger(QHJavaCompiler.class);
+	long start;
 	
-	
-	public boolean compile(File javaSourceFile, JavaCompileConfig config) {
+	public CompileResult compile(File javaSourceFile, JavaCompileConfig config) {
+		start = System.nanoTime();
+		
 		logger.debug("compile java file [{}] to [{}]", javaSourceFile.getAbsolutePath(), config.getDestPath());
 		logger.debug("parent path: {}", javaSourceFile.getParent());
 		
+		mark("log Time ");
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();  
-        
-        StandardJavaFileManager javaFileManager = new QHJavaFileManager(javaCompiler.getStandardFileManager(infolistener, null, config.getCharset()));  
-        
+        mark("get compile Time ");
+        JavaByteCodeManager javaByteCodeManager = new JavaByteCodeManager();
+        mark("get codemanager Time ");
+        MemoryJavaFileManager javaFileManager = (MemoryJavaFileManager) JavaFileManagerFactory.getMemoryJavaFileManager(config, javaCompiler);  
+        mark("get Filemanager Time ");
+        javaFileManager.setBytecodeManager(javaByteCodeManager);
+       // mark("get codemanager Time ");
         // get all the JavaFileObject from src to be compiled
         Iterable<? extends JavaFileObject> it = javaFileManager.getJavaFileObjects(javaSourceFile);  
-       
-        CompilationTask task = javaCompiler.getTask(null, javaFileManager, infolistener, 
+        
+        
+        mark("Prepare Time ");
+        CompilationTask task = javaCompiler.getTask(null, javaFileManager, config.getInfoCollector(), 
         		Arrays.asList("-d", config.getDestPath(), "-sourcepath", this.getSourcePath(javaSourceFile)), 
         		null, it);  
         
+        
         boolean compileResult = task.call();  
-        if(compileResult) {
-        	//javaFileManager.ge
-        }
+        mark("Compile Time ");
+        
+        CompileResult reuslt = new CompileResult(compileResult);
+        reuslt.setJavaByteCodeManager(javaByteCodeManager);
         
         try {
 			javaFileManager.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}  
-        return compileResult;
+        return reuslt;
 	}
 	
 	private String getSourcePath(File javaSourceFile) {
 		return javaSourceFile.getParentFile().getParent();
 	}
-	
-	
-	private void loadclass() {
-		ClassLoader cloader = Thread.currentThread().getContextClassLoader();
 		
+	private void mark(String str) {
+		logger.debug("{} : {} s.", str, (System.nanoTime() - start) / 1e9);
+		start = System.nanoTime();
 	}
-	
-	
 }

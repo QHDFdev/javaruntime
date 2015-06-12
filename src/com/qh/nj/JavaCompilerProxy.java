@@ -10,7 +10,9 @@ public class JavaCompilerProxy {
 	}
 	
 	
-	
+	public void useLib() {
+		System.out.println("use lib!");
+	}
 	
 	
 }
